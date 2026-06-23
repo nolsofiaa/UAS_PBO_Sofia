@@ -1,16 +1,15 @@
 <?php
 /**
  * File: classes/karyawanMagang.php
- * Class KaryawanMagang - turunan dari abstract class Karyawan
- * Mewakili karyawan dengan status magang
+ * Update method hitungGajiBersih()
  */
 
 require_once 'karyawan.php';
 
 class KaryawanMagang extends Karyawan {
-    // Properti tambahan spesifik untuk karyawan magang
     private $uangSakuBulanan;
     private $sertifikatKampusMerdeka;
+    private $plafonHarian = 150000; // Plafon harian untuk biaya program
 
     // Constructor
     public function __construct(
@@ -20,9 +19,9 @@ class KaryawanMagang extends Karyawan {
         $hariKerjaMasuk = null,
         $gajiDasarPerHari = null,
         $uangSakuBulanan = 0,
-        $sertifikatKampusMerdeka = null
+        $sertifikatKampusMerdeka = null,
+        $plafonHarian = 150000
     ) {
-        // Panggil constructor parent
         parent::__construct(
             $id_karyawan,
             $nama_karyawan,
@@ -31,12 +30,12 @@ class KaryawanMagang extends Karyawan {
             $gajiDasarPerHari
         );
         
-        // Inisialisasi properti spesifik
         $this->uangSakuBulanan = $uangSakuBulanan;
         $this->sertifikatKampusMerdeka = $sertifikatKampusMerdeka;
+        $this->plafonHarian = $plafonHarian;
     }
 
-    // Getter untuk properti tambahan
+    // Getter dan Setter
     public function getUangSakuBulanan() {
         return $this->uangSakuBulanan;
     }
@@ -45,7 +44,10 @@ class KaryawanMagang extends Karyawan {
         return $this->sertifikatKampusMerdeka;
     }
 
-    // Setter untuk properti tambahan
+    public function getPlafonHarian() {
+        return $this->plafonHarian;
+    }
+
     public function setUangSakuBulanan($uangSakuBulanan) {
         $this->uangSakuBulanan = $uangSakuBulanan;
     }
@@ -54,17 +56,24 @@ class KaryawanMagang extends Karyawan {
         $this->sertifikatKampusMerdeka = $sertifikatKampusMerdeka;
     }
 
-    // Implementasi abstract method hitungGajiBersih
+    public function setPlafonHarian($plafonHarian) {
+        $this->plafonHarian = $plafonHarian;
+    }
+
+    /**
+     * METHOD OVERRIDING - hitungGajiBersih()
+     * Logika: Gaji = (hariKerja * plafonHarian) + uangSakuBulanan
+     * Plafon harian untuk biaya program orientasi, pelatihan, atau asuransi kerja intern
+     */
     public function hitungGajiBersih() {
-        // Untuk magang, gaji = uang saku bulanan + (hari kerja * gaji dasar)
+        // Hitung jumlah hari kerja dari tanggal masuk sampai sekarang
         $hariKerja = $this->hitungHariKerja();
-        $gajiDasar = $hariKerja * $this->getGajiDasarPerHari();
         
-        // Uang saku bulanan
-        $uangSaku = $this->uangSakuBulanan;
+        // Biaya program berdasarkan plafon harian
+        $biayaProgram = $hariKerja * $this->plafonHarian;
         
-        // Tidak ada pajak untuk magang (UMK dibawah PTKP)
-        $gajiBersih = $gajiDasar + $uangSaku;
+        // Gaji bersih = biaya program + uang saku bulanan
+        $gajiBersih = $biayaProgram + $this->uangSakuBulanan;
         
         return $gajiBersih;
     }
@@ -96,12 +105,16 @@ class KaryawanMagang extends Karyawan {
                         <td>: <?php echo htmlspecialchars($this->getHariKerjaMasuk()); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Masa Magang</strong></td>
-                        <td>: <?php echo $this->hitungMasaKerja(); ?></td>
+                        <td><strong>Hari Kerja</strong></td>
+                        <td>: <?php echo number_format($this->hitungHariKerja()); ?> hari</td>
                     </tr>
                     <tr>
-                        <td><strong>Gaji Dasar/Hari</strong></td>
-                        <td>: Rp <?php echo number_format($this->getGajiDasarPerHari(), 0, ',', '.'); ?></td>
+                        <td><strong>Plafon Harian</strong></td>
+                        <td>: Rp <?php echo number_format($this->plafonHarian, 0, ',', '.'); ?></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Biaya Program (Hari × Plafon)</strong></td>
+                        <td>: Rp <?php echo number_format($this->hitungHariKerja() * $this->plafonHarian, 0, ',', '.'); ?></td>
                     </tr>
                     <tr>
                         <td><strong>Uang Saku Bulanan</strong></td>
@@ -112,12 +125,15 @@ class KaryawanMagang extends Karyawan {
                         <td>: <?php echo htmlspecialchars($this->sertifikatKampusMerdeka ?? 'Belum ada'); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Gaji Kotor</strong></td>
-                        <td>: Rp <?php echo number_format($this->hitungGajiKotor(), 0, ',', '.'); ?></td>
+                        <td style="background: #e3f2fd; font-weight: bold;">Gaji Bersih (Program)</td>
+                        <td style="background: #e3f2fd; font-weight: bold; color: #1976d2;">
+                            Rp <?php echo number_format($this->hitungGajiBersih(), 0, ',', '.'); ?>
+                        </td>
                     </tr>
                     <tr>
-                        <td><strong>Gaji Bersih</strong></td>
-                        <td>: <strong>Rp <?php echo number_format($this->hitungGajiBersih(), 0, ',', '.'); ?></strong></td>
+                        <td colspan="2" style="font-size: 12px; color: #666; text-align: center;">
+                            * Gaji = (hari kerja × plafon harian) + uang saku bulanan
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -129,7 +145,7 @@ class KaryawanMagang extends Karyawan {
         <?php
     }
 
-    // Method khusus untuk karyawan magang
+    // Method spesifik
     public function getSertifikatUrl() {
         if ($this->sertifikatKampusMerdeka) {
             return "sertifikat/" . $this->sertifikatKampusMerdeka . ".pdf";
@@ -139,7 +155,6 @@ class KaryawanMagang extends Karyawan {
 
     public function isSertifikatValid() {
         if ($this->sertifikatKampusMerdeka) {
-            // Cek apakah sertifikat sudah divalidasi (contoh: cek pola MSIB-XXX)
             return preg_match('/^MSIB-\d{3}$/', $this->sertifikatKampusMerdeka);
         }
         return false;
@@ -158,7 +173,7 @@ class KaryawanMagang extends Karyawan {
         }
     }
 
-    // Override method simpanKeDatabase untuk menyertakan properti tambahan
+    // Override method simpanKeDatabase
     public function simpanKeDatabase() {
         $nama = $this->db->escapeString($this->getNamaKaryawan());
         $departemen = $this->db->escapeString($this->getDepartemen());

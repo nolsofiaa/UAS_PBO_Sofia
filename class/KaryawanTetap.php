@@ -1,14 +1,12 @@
 <?php
 /**
  * File: classes/karyawanTetap.php
- * Class KaryawanTetap - turunan dari abstract class Karyawan
- * Mewakili karyawan dengan status tetap
+ * Update method hitungGajiBersih()
  */
 
 require_once 'karyawan.php';
 
 class KaryawanTetap extends Karyawan {
-    // Properti tambahan spesifik untuk karyawan tetap
     private $tunjanganKesehatan;
     private $opsiSahamId;
 
@@ -22,7 +20,6 @@ class KaryawanTetap extends Karyawan {
         $tunjanganKesehatan = 0,
         $opsiSahamId = null
     ) {
-        // Panggil constructor parent
         parent::__construct(
             $id_karyawan,
             $nama_karyawan,
@@ -31,12 +28,11 @@ class KaryawanTetap extends Karyawan {
             $gajiDasarPerHari
         );
         
-        // Inisialisasi properti spesifik
         $this->tunjanganKesehatan = $tunjanganKesehatan;
         $this->opsiSahamId = $opsiSahamId;
     }
 
-    // Getter untuk properti tambahan
+    // Getter dan Setter
     public function getTunjanganKesehatan() {
         return $this->tunjanganKesehatan;
     }
@@ -45,7 +41,6 @@ class KaryawanTetap extends Karyawan {
         return $this->opsiSahamId;
     }
 
-    // Setter untuk properti tambahan
     public function setTunjanganKesehatan($tunjanganKesehatan) {
         $this->tunjanganKesehatan = $tunjanganKesehatan;
     }
@@ -54,25 +49,21 @@ class KaryawanTetap extends Karyawan {
         $this->opsiSahamId = $opsiSahamId;
     }
 
-    // Implementasi abstract method hitungGajiBersih
+    /**
+     * METHOD OVERRIDING - hitungGajiBersih()
+     * Logika: Gaji = (hariKerja * gajiDasarPerHari) + tunjanganKesehatan
+     * Mendapatkan tambahan tunjangan kesehatan
+     */
     public function hitungGajiBersih() {
-        // Gaji kotor dari parent
-        $gajiKotor = $this->hitungGajiKotor();
+        // Hitung jumlah hari kerja dari tanggal masuk sampai sekarang
+        $hariKerja = $this->hitungHariKerja();
         
-        // Perhitungan pajak (5% untuk karyawan tetap)
-        $pajak = $gajiKotor * 0.05;
+        // Hitung gaji dasar dari jumlah hari kerja
+        $gajiDasar = $hariKerja * $this->getGajiDasarPerHari();
         
-        // Tunjangan kesehatan
-        $tunjangan = $this->tunjanganKesehatan;
-        
-        // Bonus dari opsi saham (jika ada)
-        $bonusSaham = 0;
-        if ($this->opsiSahamId !== null && $this->opsiSahamId !== '') {
-            $bonusSaham = $gajiKotor * 0.02; // Bonus 2% dari gaji kotor
-        }
-        
-        // Gaji bersih = gaji kotor - pajak + tunjangan + bonus saham
-        $gajiBersih = $gajiKotor - $pajak + $tunjangan + $bonusSaham;
+        // Gaji bersih = gaji dasar + tunjangan kesehatan
+        // Mendapatkan tambahan tunjangan kesehatan
+        $gajiBersih = $gajiDasar + $this->tunjanganKesehatan;
         
         return $gajiBersih;
     }
@@ -104,12 +95,16 @@ class KaryawanTetap extends Karyawan {
                         <td>: <?php echo htmlspecialchars($this->getHariKerjaMasuk()); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Masa Kerja</strong></td>
-                        <td>: <?php echo $this->hitungMasaKerja(); ?></td>
+                        <td><strong>Hari Kerja</strong></td>
+                        <td>: <?php echo number_format($this->hitungHariKerja()); ?> hari</td>
                     </tr>
                     <tr>
                         <td><strong>Gaji Dasar/Hari</strong></td>
                         <td>: Rp <?php echo number_format($this->getGajiDasarPerHari(), 0, ',', '.'); ?></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gaji Dasar (Hari Kerja)</strong></td>
+                        <td>: Rp <?php echo number_format($this->hitungHariKerja() * $this->getGajiDasarPerHari(), 0, ',', '.'); ?></td>
                     </tr>
                     <tr>
                         <td><strong>Tunjangan Kesehatan</strong></td>
@@ -120,48 +115,42 @@ class KaryawanTetap extends Karyawan {
                         <td>: <?php echo htmlspecialchars($this->opsiSahamId ?? 'Tidak ada'); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Gaji Kotor</strong></td>
-                        <td>: Rp <?php echo number_format($this->hitungGajiKotor(), 0, ',', '.'); ?></td>
+                        <td style="background: #e8f5e9; font-weight: bold;">Gaji Bersih (+ Tunjangan)</td>
+                        <td style="background: #e8f5e9; font-weight: bold; color: #2e7d32;">
+                            Rp <?php echo number_format($this->hitungGajiBersih(), 0, ',', '.'); ?>
+                        </td>
                     </tr>
                     <tr>
-                        <td><strong>Gaji Bersih</strong></td>
-                        <td>: <strong>Rp <?php echo number_format($this->hitungGajiBersih(), 0, ',', '.'); ?></strong></td>
+                        <td colspan="2" style="font-size: 12px; color: #666; text-align: center;">
+                            * Gaji = (hari kerja × gaji dasar/hari) + tunjangan kesehatan
+                        </td>
                     </tr>
                 </table>
             </div>
         </div>
         <style>
-            .profile-card { border: 1px solid #ddd; border-radius: 10px; margin: 15px 0; overflow: hidden; }
             .profile-tetap { border-left: 5px solid #4CAF50; }
-            .profile-header { background: #f8f9fa; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-            .profile-header h3 { margin: 0; color: #333; }
-            .badge { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
             .badge-tetap { background: #4CAF50; color: white; }
-            .profile-body { padding: 20px; }
-            .profile-table { width: 100%; border-collapse: collapse; }
-            .profile-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
-            .profile-table tr:last-child td { border-bottom: none; }
         </style>
         <?php
     }
 
-    // Method khusus untuk karyawan tetap
+    // Method spesifik
     public function hitungBonusTahunan() {
-        $gajiKotor = $this->hitungGajiKotor();
+        $gajiDasar = $this->hitungHariKerja() * $this->getGajiDasarPerHari();
         $masaKerjaTahun = (int)explode(' ', $this->hitungMasaKerja())[0];
         
-        // Bonus tahunan: 1 bulan gaji + tambahan per tahun kerja
-        $bonus = $gajiKotor;
+        $bonus = $gajiDasar;
         if ($masaKerjaTahun >= 5) {
-            $bonus += $gajiKotor * 0.5; // Bonus 50% untuk masa kerja >5 tahun
+            $bonus += $gajiDasar * 0.5;
         } elseif ($masaKerjaTahun >= 3) {
-            $bonus += $gajiKotor * 0.3; // Bonus 30% untuk masa kerja >3 tahun
+            $bonus += $gajiDasar * 0.3;
         }
         
         return $bonus;
     }
 
-    // Override method simpanKeDatabase untuk menyertakan properti tambahan
+    // Override method simpanKeDatabase
     public function simpanKeDatabase() {
         $nama = $this->db->escapeString($this->getNamaKaryawan());
         $departemen = $this->db->escapeString($this->getDepartemen());

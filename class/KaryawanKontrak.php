@@ -1,14 +1,12 @@
 <?php
 /**
  * File: classes/karyawanKontrak.php
- * Class KaryawanKontrak - turunan dari abstract class Karyawan
- * Mewakili karyawan dengan status kontrak
+ * Update method hitungGajiBersih()
  */
 
 require_once 'karyawan.php';
 
 class KaryawanKontrak extends Karyawan {
-    // Properti tambahan spesifik untuk karyawan kontrak
     private $durasiKontrakBulan;
     private $agensiPenyalur;
 
@@ -22,7 +20,6 @@ class KaryawanKontrak extends Karyawan {
         $durasiKontrakBulan = 0,
         $agensiPenyalur = null
     ) {
-        // Panggil constructor parent
         parent::__construct(
             $id_karyawan,
             $nama_karyawan,
@@ -31,12 +28,11 @@ class KaryawanKontrak extends Karyawan {
             $gajiDasarPerHari
         );
         
-        // Inisialisasi properti spesifik
         $this->durasiKontrakBulan = $durasiKontrakBulan;
         $this->agensiPenyalur = $agensiPenyalur;
     }
 
-    // Getter untuk properti tambahan
+    // Getter dan Setter
     public function getDurasiKontrakBulan() {
         return $this->durasiKontrakBulan;
     }
@@ -45,7 +41,6 @@ class KaryawanKontrak extends Karyawan {
         return $this->agensiPenyalur;
     }
 
-    // Setter untuk properti tambahan
     public function setDurasiKontrakBulan($durasiKontrakBulan) {
         $this->durasiKontrakBulan = $durasiKontrakBulan;
     }
@@ -54,19 +49,19 @@ class KaryawanKontrak extends Karyawan {
         $this->agensiPenyalur = $agensiPenyalur;
     }
 
-    // Implementasi abstract method hitungGajiBersih
+    /**
+     * METHOD OVERRIDING - hitungGajiBersih()
+     * Logika: Gaji murni berdasarkan jumlah hari kehadiran
+     * Formula: hariKerjaMasuk * gajiDasarPerHari
+     * Tidak ada potongan pajak, tidak ada tunjangan
+     */
     public function hitungGajiBersih() {
-        // Gaji kotor dari parent
-        $gajiKotor = $this->hitungGajiKotor();
+        // Hitung jumlah hari kerja dari tanggal masuk sampai sekarang
+        $hariKerja = $this->hitungHariKerja();
         
-        // Perhitungan pajak (3% untuk karyawan kontrak)
-        $pajak = $gajiKotor * 0.03;
-        
-        // Potongan administrasi agensi (1.5% dari gaji kotor)
-        $potonganAgensi = $gajiKotor * 0.015;
-        
-        // Gaji bersih = gaji kotor - pajak - potongan agensi
-        $gajiBersih = $gajiKotor - $pajak - $potonganAgensi;
+        // Gaji bersih = jumlah hari kerja * gaji dasar per hari
+        // MURNI berdasarkan kehadiran, tanpa potongan apapun
+        $gajiBersih = $hariKerja * $this->getGajiDasarPerHari();
         
         return $gajiBersih;
     }
@@ -105,8 +100,8 @@ class KaryawanKontrak extends Karyawan {
                         <td>: <?php echo htmlspecialchars($this->getHariKerjaMasuk()); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Masa Kerja</strong></td>
-                        <td>: <?php echo $this->hitungMasaKerja(); ?></td>
+                        <td><strong>Hari Kerja</strong></td>
+                        <td>: <?php echo number_format($this->hitungHariKerja()); ?> hari</td>
                     </tr>
                     <tr>
                         <td><strong>Gaji Dasar/Hari</strong></td>
@@ -125,12 +120,15 @@ class KaryawanKontrak extends Karyawan {
                         <td>: <?php echo htmlspecialchars($this->agensiPenyalur); ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Gaji Kotor</strong></td>
-                        <td>: Rp <?php echo number_format($this->hitungGajiKotor(), 0, ',', '.'); ?></td>
+                        <td style="background: #e3f2fd; font-weight: bold;">Gaji Bersih (MURNI)</td>
+                        <td style="background: #e3f2fd; font-weight: bold; color: #1976d2;">
+                            Rp <?php echo number_format($this->hitungGajiBersih(), 0, ',', '.'); ?>
+                        </td>
                     </tr>
                     <tr>
-                        <td><strong>Gaji Bersih</strong></td>
-                        <td>: <strong>Rp <?php echo number_format($this->hitungGajiBersih(), 0, ',', '.'); ?></strong></td>
+                        <td colspan="2" style="font-size: 12px; color: #666; text-align: center;">
+                            * Sistem pengujian murni berdasarkan jumlah hari kehadiran
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -138,11 +136,12 @@ class KaryawanKontrak extends Karyawan {
         <style>
             .profile-kontrak { border-left: 5px solid #FF9800; }
             .badge-kontrak { background: #FF9800; color: white; }
+            .profile-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
         </style>
         <?php
     }
 
-    // Method khusus untuk karyawan kontrak
+    // Method spesifik
     public function cekStatusKontrak() {
         $tanggalMasuk = new DateTime($this->getHariKerjaMasuk());
         $tanggalSekarang = new DateTime('now');
@@ -162,13 +161,12 @@ class KaryawanKontrak extends Karyawan {
         }
     }
 
-    // Method untuk perpanjangan kontrak
     public function perpanjangKontrak($bulanTambahan) {
         $this->durasiKontrakBulan += $bulanTambahan;
         return "Kontrak diperpanjang {$bulanTambahan} bulan. Total durasi: {$this->durasiKontrakBulan} bulan";
     }
 
-    // Override method simpanKeDatabase untuk menyertakan properti tambahan
+    // Override method simpanKeDatabase
     public function simpanKeDatabase() {
         $nama = $this->db->escapeString($this->getNamaKaryawan());
         $departemen = $this->db->escapeString($this->getDepartemen());
